@@ -1,10 +1,23 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Resources;
 
-use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 
-class HerramientaApiController extends Controller
+class HerramientaResource extends JsonResource
 {
-    //
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'nombre' => $this->nombre,
+            'categoria' => $this->categoria,
+            'descripcion' => $this->descripcion,
+            'disponible' => $this->disponible,
+            'latitud' => $this->latitud,
+            'longitud' => $this->longitud,
+            'dueno' => $this->user?->name,
+        ];
+    }
 }

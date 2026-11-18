@@ -11,6 +11,42 @@ it('guarda las contraseñas cifradas', function () {
     expect(Hash::check('secreto-123', $usuario->password))->toBeTrue();
 });
 
+it('impide cambiar la disponibilidad de una herramienta ajena', function () {
+    $dueno = User::factory()->create();
+    $otro = User::factory()->create();
+    $herramienta = Herramienta::factory()->create(['user_id' => $dueno->id]);
+
+    $this->actingAs($otro)
+        ->patch(route('herramientas.disponibilidad', $herramienta))
+        ->assertForbidden();
+});
+
+it('permite al dueño cambiar la disponibilidad', function () {
+    $dueno = User::factory()->create();
+    $herramienta = Herramienta::factory()->create(['user_id' => $dueno->id, 'disponible' => true]);
+
+    $this->actingAs($dueno)
+        ->patch(route('herramientas.disponibilidad', $herramienta))
+        ->assertRedirect();
+
+    expect($herramienta->fresh()->disponible)->toBeFalse();
+});
+
+it('la API exige token para cambiar disponibilidad', function () {
+    $herramienta = Herramienta::factory()->create();
+
+    $this->patchJson("/api/v1/herramientas/{$herramienta->id}/disponibilidad")
+        ->assertUnauthorized();
+});
+
+it('la API lista herramientas sin autenticación', function () {
+    Herramienta::factory()->count(3)->create();
+
+    $this->getJson('/api/v1/herramientas')
+        ->assertOk()
+        ->assertJsonCount(3, 'data');
+});
+
 it('envía cabeceras de seguridad en las respuestas', function () {
     $this->get('/')
         ->assertHeader('X-Content-Type-Options', 'nosniff')

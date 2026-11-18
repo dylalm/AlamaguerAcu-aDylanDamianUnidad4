@@ -5,93 +5,98 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\HerramientaResource;
 use App\Models\Herramienta;
-use App\Services\GeocodificacionService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\Rule;
 
 class HerramientaController extends Controller
 {
-    /** Lista herramientas con filtros, ordenadas de la más cercana a la más lejana. */
-    public function index(Request $request): AnonymousResourceCollection
+    // GET /api/herramientas?search=&categoria=&solo_disponibles=1
+    public function index(Request $request)
     {
-        $filtros = $request->validate([
-            'buscar' => ['nullable', 'string', 'max:60'],
-            'categoria' => ['nullable', 'in:'.implode(',', array_keys(Herramienta::CATEGORIAS))],
-            'disponibles' => ['nullable', 'boolean'],
-        ]);
-
-        $centro = config('manovecina.centro');
-
         $herramientas = Herramienta::query()
-            ->with('propietario:id,name')
-            ->buscar($filtros['buscar'] ?? null)
-            ->when($filtros['categoria'] ?? null, fn ($consulta, $categoria) => $consulta->where('categoria', $categoria))
-            ->when($request->boolean('disponibles'), fn ($consulta) => $consulta->where('disponible', true))
-            ->limit(100)
-            ->get();
+            ->with('propietario')
+            ->when($request->query('search'), fn ($q, $s) => $q->where('nombre', 'like', "%{$s}%"))
+            ->when($request->query('categoria'), fn ($q, $c) => $q->where('categoria', $c))
+            ->when($request->boolean('solo_disponibles'), fn ($q) => $q->where('disponible', true))
+            ->paginate(10)
+            ->withQueryString();
 
-        $herramientas->each(function (Herramienta $herramienta) use ($centro): void {
-            $herramienta->distancia_km = $herramienta->distanciaKm($centro['latitud'], $centro['longitud']);
-        });
-
-        return HerramientaResource::collection($herramientas->sortBy('distancia_km')->values());
+        return HerramientaResource::collection($herramientas);
     }
 
-    /** Muestra una herramienta. */
-    public function show(Herramienta $herramienta): HerramientaResource
+    // GET /api/herramientas/{id}
+    public function show(Herramienta $herramienta)
     {
-        return new HerramientaResource($herramienta->load('propietario'));
+        return new HerramientaResource($herramienta->load('user'));
     }
 
-    /** Publica una herramienta a nombre del usuario del token. */
-    public function store(Request $request, GeocodificacionService $geocodificador): JsonResponse
+    // PATCH /api/herramientas/{id}/disponibilidad  (requiere token)
+    public function disponibilidad(Request $request, Herramienta $herramienta)
+    {
+        Gate::authorize('update', $herramienta);
+
+        $datos = $request->validate(['disponible' => ['sometimes', 'boolean']]);
+
+        $herramienta->disponible = $datos['disponible'] ?? ! $herramienta->disponible;
+        $herramienta->save();
+
+        return new HerramientaResource($herramienta->load('user'));
+    }
+
+    public function store(Request $request)
     {
         $datos = $request->validate([
             'nombre' => ['required', 'string', 'max:80'],
-            'descripcion' => ['required', 'string', 'max:500'],
-            'categoria' => ['required', 'in:'.implode(',', array_keys(Herramienta::CATEGORIAS))],
+            'descripcion' => ['required', 'string', 'max:1000'],
+            // copia aquí la misma lista que ya usa el HerramientaController web
+            'categoria' => ['required', Rule::in(['jardin', 'cocina', 'construccion'])],
             'barrio' => ['required', 'string', 'max:60'],
-            'latitud' => ['nullable', 'numeric', 'between:-90,90', 'required_with:longitud'],
-            'longitud' => ['nullable', 'numeric', 'between:-180,180', 'required_with:latitud'],
+            'latitud' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitud' => ['nullable', 'numeric', 'between:-180,180'],
         ]);
 
-        // Si el cliente no manda coordenadas, se obtienen del servicio de terceros Nominatim (OpenStreetMap)
-        if (! isset($datos['latitud'])) {
-            $punto = $geocodificador->buscar($datos['barrio']);
+        if (! isset($datos['latitud'], $datos['longitud'])) {
+            $coordenadas = $this->geocodificar($datos['barrio']);
 
-            if ($punto === null) {
+            if (! $coordenadas) {
                 return response()->json([
-                    'mensaje' => 'No se pudo ubicar la zona indicada. Envía latitud y longitud o prueba con otro nombre.',
+                    'message' => 'No se encontró la zona indicada.',
+                    'errors' => ['barrio' => ['No se pudo ubicar este barrio.']],
                 ], 422);
             }
 
-            $datos['latitud'] = $punto['latitud'];
-            $datos['longitud'] = $punto['longitud'];
+            [$datos['latitud'], $datos['longitud']] = $coordenadas;
         }
 
-        // El dueño siempre es el usuario del token: un user_id enviado por el cliente se ignora
-        $herramienta = Herramienta::create([
-            ...$datos,
-            'user_id' => $request->user()->id,
-            'disponible' => true,
-        ]);
+        $herramienta = new Herramienta($datos);
+        $herramienta->user_id = $request->user()->id; // nunca del cliente
+        $herramienta->disponible = true;
+        $herramienta->save();
 
         return (new HerramientaResource($herramienta->load('propietario')))
             ->response()
             ->setStatusCode(201);
     }
 
-    /** Cambia la disponibilidad de una herramienta propia. */
-    public function disponibilidad(Request $request, Herramienta $herramienta): HerramientaResource
+    private function geocodificar(string $barrio): ?array
     {
-        Gate::authorize('update', $herramienta);
+        try {
+            $respuesta = Http::withHeaders(['User-Agent' => 'ManoVecina/1.0 (proyecto escolar)'])
+                ->timeout(5)
+                ->get('https://nominatim.openstreetmap.org/search', [
+                    'q' => $barrio,
+                    'format' => 'json',
+                    'limit' => 1,
+                ]);
+        } catch (ConnectionException) {
+            return null;
+        }
 
-        $datos = $request->validate(['disponible' => ['nullable', 'boolean']]);
+        $primero = $respuesta->json('0');
 
-        $herramienta->update(['disponible' => $datos['disponible'] ?? ! $herramienta->disponible]);
-
-        return new HerramientaResource($herramienta->load('propietario'));
+        return $primero ? [(float) $primero['lat'], (float) $primero['lon']] : null;
     }
 }

@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->trustProxies(at: '*'); // necesario detrás del proxy de Render
+        $middleware->web(append: [
+            \App\Http\Middleware\SecurityHeaders::class,
+        ]);
         $middleware->append(SecurityHeaders::class);
         $middleware->web(append: [
             HandleInertiaRequests::class,

@@ -1,4 +1,5 @@
 <script setup>
+import MapaHerramientas from '@/Components/MapaHerramientas.vue';
 import { computed, ref, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import HerramientaCard from '@/Components/HerramientaCard.vue';
@@ -49,6 +50,8 @@ function pedir(herramienta) {
 
 <template>
     <Head title="Herramientas cerca de ti" />
+
+        <MapaHerramientas :herramientas="herramientas" />
 
     <div class="min-h-screen bg-[#f7f5ef] text-[#1f2a24]">
         <header class="bg-[#1b4332] px-6 py-4 text-white">

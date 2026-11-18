@@ -7,9 +7,8 @@ use App\Models\User;
 
 class HerramientaPolicy
 {
-    /** Solo el dueño de una herramienta puede modificarla. */
     public function update(User $user, Herramienta $herramienta): bool
     {
-        return $user->id === $herramienta->user_id;
+        return $herramienta->user_id === $user->id;
     }
 }

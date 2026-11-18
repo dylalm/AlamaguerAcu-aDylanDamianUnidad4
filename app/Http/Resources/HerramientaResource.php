@@ -16,13 +16,11 @@ class HerramientaResource extends JsonResource
             'nombre' => $this->nombre,
             'descripcion' => $this->descripcion,
             'categoria' => $this->categoria,
-            'categoria_etiqueta' => Herramienta::CATEGORIAS[$this->categoria] ?? 'Otros',
             'barrio' => $this->barrio,
-            'latitud' => $this->latitud,
-            'longitud' => $this->longitud,
+            'latitud' => (float) $this->latitud,
+            'longitud' => (float) $this->longitud,
             'disponible' => $this->disponible,
-            'propietario' => $this->whenLoaded('propietario', fn () => $this->propietario->name),
-            'distancia_km' => $this->when($this->distancia_km !== null, $this->distancia_km),
+            'propietario' => $this->propietario?->name,
         ];
     }
 }

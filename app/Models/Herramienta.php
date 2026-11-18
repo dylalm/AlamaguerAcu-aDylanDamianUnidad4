@@ -24,15 +24,13 @@ class Herramienta extends Model
     protected $table = 'herramientas';
 
     protected $fillable = [
-        'user_id',
-        'nombre',
-        'descripcion',
-        'categoria',
-        'barrio',
-        'latitud',
-        'longitud',
-        'disponible',
+        'user_id', 'nombre', 'descripcion', 'categoria',
+        'barrio', 'latitud', 'longitud', 'disponible',
     ];
+    public function propietario()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 
     protected function casts(): array
     {
@@ -43,10 +41,6 @@ class Herramienta extends Model
         ];
     }
 
-    public function propietario(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
 
     /** Busca por nombre o descripción sin distinguir mayúsculas. */
     public function scopeBuscar(Builder $query, ?string $texto): Builder
@@ -75,4 +69,11 @@ class Herramienta extends Model
 
         return round($radioTierra * 2 * atan2(sqrt($a), sqrt(1 - $a)), 1);
     }
+    protected $casts = ['disponible' => 'boolean'];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
 }

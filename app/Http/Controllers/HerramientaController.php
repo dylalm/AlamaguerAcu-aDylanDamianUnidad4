@@ -6,9 +6,24 @@ use App\Models\Herramienta;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Http\Requests\StoreHerramientaRequest;
 
 class HerramientaController extends Controller
 {
+    public function create()
+    {
+        return Inertia::render('Herramientas/Create');
+    }
+
+    public function store(StoreHerramientaRequest $request)
+    {
+        $request->user()->herramientas()->create(
+            $request->validated() + ['disponible' => true]
+        );
+
+        return redirect()->route('herramientas.index');
+    }
+
     /** Catálogo de herramientas con búsqueda, filtros y orden por cercanía. */
     public function index(Request $request): Response
     {
