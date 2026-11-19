@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use App\Models\Herramienta;
 
 class StoreHerramientaRequest extends FormRequest
 {
@@ -15,9 +17,10 @@ class StoreHerramientaRequest extends FormRequest
     {
         return [
             'nombre' => ['required', 'string', 'max:80'],
-            'categoria' => ['required', 'string', 'max:20'],
+            // usa aquí la MISMA lista de categorías que ya valida tu catálogo
+            'categoria' => ['required', Rule::in(array_keys(Herramienta::CATEGORIAS))],
             'barrio' => ['required', 'string', 'max:60'],
-            'descripcion' => ['nullable', 'string', 'max:1000'],
+            'descripcion' => ['required', 'string', 'max:1000'],
             'latitud' => ['required', 'numeric', 'between:-90,90'],
             'longitud' => ['required', 'numeric', 'between:-180,180'],
         ];

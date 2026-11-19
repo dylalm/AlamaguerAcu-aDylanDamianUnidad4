@@ -6,6 +6,8 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 
+defineProps({ categorias: { type: Array, default: () => [] } });
+
 const form = useForm({
     nombre: '',
     categoria: '',
@@ -36,7 +38,11 @@ const enviar = () => form.post(route('herramientas.store'));
 
                 <div>
                     <InputLabel for="categoria" value="Categoría" />
-                    <TextInput id="categoria" v-model="form.categoria" class="mt-1 block w-full" />
+                    <select id="categoria" v-model="form.categoria"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        <option value="" disabled>Elige una categoría</option>
+                        <option v-for="c in categorias" :key="c.valor" :value="c.valor">{{ c.etiqueta }}</option>                    
+                    </select>
                     <InputError class="mt-1" :message="form.errors.categoria" />
                 </div>
 

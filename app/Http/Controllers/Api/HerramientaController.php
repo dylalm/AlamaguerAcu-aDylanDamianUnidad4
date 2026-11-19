@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
+use App\Http\Requests\StoreHerramientaRequest;
+use Inertia\Inertia;
 
 class HerramientaController extends Controller
 {
@@ -26,6 +28,16 @@ class HerramientaController extends Controller
 
         return HerramientaResource::collection($herramientas);
     }
+
+    public function create()
+    {
+        return Inertia::render('Herramientas/Create', [
+            'categorias' => collect(Herramienta::CATEGORIAS)
+                ->map(fn ($etiqueta, $clave) => ['valor' => $clave, 'etiqueta' => $etiqueta])
+                ->values(),
+        ]);
+    }
+
 
     // GET /api/herramientas/{id}
     public function show(Herramienta $herramienta)
@@ -52,7 +64,7 @@ class HerramientaController extends Controller
             'nombre' => ['required', 'string', 'max:80'],
             'descripcion' => ['required', 'string', 'max:1000'],
             // copia aquí la misma lista que ya usa el HerramientaController web
-            'categoria' => ['required', Rule::in(['jardin', 'cocina', 'construccion'])],
+            'categoria' => ['required', Rule::in(array_keys(\App\Models\Herramienta::CATEGORIAS))],
             'barrio' => ['required', 'string', 'max:60'],
             'latitud' => ['nullable', 'numeric', 'between:-90,90'],
             'longitud' => ['nullable', 'numeric', 'between:-180,180'],
