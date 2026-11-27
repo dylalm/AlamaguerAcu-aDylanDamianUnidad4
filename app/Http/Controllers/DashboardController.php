@@ -13,6 +13,7 @@ class DashboardController extends Controller
     public function index(Request $request): Response
     {
         $herramientas = Herramienta::query()
+            ->with('prestatario:id,name')
             ->where('user_id', $request->user()->id)
             ->orderBy('nombre')
             ->get();
@@ -31,6 +32,7 @@ class DashboardController extends Controller
                     'categoria_etiqueta' => Herramienta::CATEGORIAS[$herramienta->categoria] ?? 'Otros',
                     'barrio' => $herramienta->barrio,
                     'disponible' => $herramienta->disponible,
+                    'ocupada_por' => $herramienta->prestatario?->name,
                 ])
                 ->values()
                 ->all(),

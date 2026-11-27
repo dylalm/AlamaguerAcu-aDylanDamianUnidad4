@@ -1,9 +1,17 @@
 <script setup>
-defineProps({
+import { computed } from 'vue';
+import { usePage } from '@inertiajs/vue3';
+
+const props = defineProps({
     herramienta: { type: Object, required: true },
 });
 
 defineEmits(['solicitar']);
+
+const page = usePage();
+
+// El dueño no puede pedir prestada su propia herramienta
+const esMia = computed(() => page.props.auth?.user?.id === props.herramienta.propietario_id);
 
 const iconos = {
     jardin: '🌱',
@@ -21,9 +29,15 @@ const iconos = {
             <span class="text-3xl" aria-hidden="true">{{ iconos[herramienta.categoria] ?? '🧰' }}</span>
             <span
                 class="rounded-full px-3 py-1 text-xs font-semibold"
-                :class="herramienta.disponible ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'"
+                :class="herramienta.disponible ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'"
             >
-                {{ herramienta.disponible ? 'Disponible' : 'Prestada' }}
+                {{
+                    herramienta.disponible
+                        ? 'Disponible'
+                        : herramienta.ocupada_por
+                          ? 'Ocupada por ' + herramienta.ocupada_por
+                          : 'Ocupada'
+                }}
             </span>
         </div>
 
@@ -43,15 +57,19 @@ const iconos = {
                 <dt class="text-gray-500">Zona</dt>
                 <dd>{{ herramienta.barrio }} · a {{ herramienta.distancia_km }} km</dd>
             </div>
+            <div v-if="herramienta.ocupada_por" class="flex justify-between gap-2">
+                <dt class="text-gray-500">Ocupada por</dt>
+                <dd class="font-semibold">{{ herramienta.ocupada_por }}</dd>
+            </div>
         </dl>
 
         <button
             type="button"
             class="mt-4 rounded-lg bg-[#1b4332] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2d6a4f] disabled:cursor-not-allowed disabled:bg-gray-300"
-            :disabled="!herramienta.disponible"
+            :disabled="!herramienta.disponible || esMia"
             @click="$emit('solicitar', herramienta)"
         >
-            {{ herramienta.disponible ? 'Pedir prestada' : 'No disponible por ahora' }}
+            {{ esMia ? 'Es tu herramienta' : herramienta.disponible ? 'Pedir prestada' : 'No disponible por ahora' }}
         </button>
     </article>
 </template>

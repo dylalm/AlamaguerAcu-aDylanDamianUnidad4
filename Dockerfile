@@ -16,7 +16,7 @@ RUN npm ci && npm run build
 FROM php:8.3-cli
 RUN apt-get update \
  && apt-get install -y --no-install-recommends libpq-dev libzip-dev libsqlite3-dev unzip \
- && docker-php-ext-install pdo_pgsql pdo_sqlite zip opcache \
+ && docker-php-ext-install pdo_mysql pdo_pgsql pdo_sqlite zip opcache \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www/html

@@ -80,7 +80,7 @@ function alternar(herramienta) {
                                     class="rounded-full px-3 py-1 text-xs font-semibold"
                                     :class="herramienta.disponible ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'"
                                 >
-                                    {{ herramienta.disponible ? 'Disponible' : 'Prestada' }}
+                                    {{ herramienta.disponible ? 'Disponible' : (herramienta.ocupada_por ? 'Ocupada por ' + herramienta.ocupada_por : 'Prestada') }}
                                 </span>
                                 <button
                                     type="button"

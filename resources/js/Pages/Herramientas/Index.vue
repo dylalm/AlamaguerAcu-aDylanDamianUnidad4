@@ -1,7 +1,7 @@
 <script setup>
 import MapaHerramientas from '@/Components/MapaHerramientas.vue';
 import { computed, ref, watch } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import HerramientaCard from '@/Components/HerramientaCard.vue';
 import ClimaWidget from '@/Components/ClimaWidget.vue';
 
@@ -44,7 +44,28 @@ function limpiarFiltros() {
 }
 
 function pedir(herramienta) {
-    mensaje.value = `Pronto podrás pedir prestada "${herramienta.nombre}" a ${herramienta.propietario}: las reservas llegan en el Sprint 3.`;
+    const usuario = usePage().props.auth.user;
+
+    // Para pedir una herramienta hay que iniciar sesión
+    if (!usuario) {
+        router.visit(route('login'));
+        return;
+    }
+
+    router.post(
+        route('herramientas.prestamo', herramienta.id),
+        {},
+        {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                mensaje.value = `Pediste prestada "${herramienta.nombre}". Ahora aparece ocupada por ${usuario.name}.`;
+            },
+            onError: (errores) => {
+                mensaje.value = errores.prestamo ?? 'No se pudo pedir la herramienta.';
+            },
+        },
+    );
 }
 </script>
 

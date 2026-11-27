@@ -1,0 +1,4 @@
+# Los certificados y llaves privadas nunca se suben al repositorio
+*
+!.gitignore
+!generar-certificado.ps1

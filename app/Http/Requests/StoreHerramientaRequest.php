@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Herramienta;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use App\Models\Herramienta;
 
 class StoreHerramientaRequest extends FormRequest
 {

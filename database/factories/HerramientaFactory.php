@@ -31,4 +31,10 @@ class HerramientaFactory extends Factory
     {
         return $this->state(fn () => ['disponible' => false]);
     }
+
+    /** Herramienta ocupada por un vecino concreto. */
+    public function ocupadaPor(User $usuario): static
+    {
+        return $this->state(fn () => ['disponible' => false, 'prestado_a' => $usuario->id]);
+    }
 }

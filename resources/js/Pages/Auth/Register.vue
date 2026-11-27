@@ -22,16 +22,28 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Register" />
+        <Head title="Crear cuenta" />
 
-        <form @submit.prevent="submit">
+        <div>
+            <p class="text-sm font-semibold uppercase tracking-[0.16em] text-[#b26b2b]">
+                Forma parte de tu comunidad
+            </p>
+            <h1 class="mt-2 text-3xl font-bold tracking-tight text-[#1b4332]">
+                Crea tu cuenta
+            </h1>
+            <p class="mt-2 text-sm leading-6 text-gray-500">
+                Conecta con tus vecinos para compartir herramientas y habilidades.
+            </p>
+        </div>
+
+        <form class="mt-7 space-y-4" @submit.prevent="submit">
             <div>
-                <InputLabel for="name" value="Name" />
+                <InputLabel for="name" value="Nombre" />
 
                 <TextInput
                     id="name"
                     type="text"
-                    class="mt-1 block w-full"
+                    class="mt-2 block w-full"
                     v-model="form.name"
                     required
                     autofocus
@@ -41,13 +53,13 @@ const submit = () => {
                 <InputError class="mt-2" :message="form.errors.name" />
             </div>
 
-            <div class="mt-4">
-                <InputLabel for="email" value="Email" />
+            <div>
+                <InputLabel for="email" value="Correo electrónico" />
 
                 <TextInput
                     id="email"
                     type="email"
-                    class="mt-1 block w-full"
+                    class="mt-2 block w-full"
                     v-model="form.email"
                     required
                     autocomplete="username"
@@ -56,13 +68,13 @@ const submit = () => {
                 <InputError class="mt-2" :message="form.errors.email" />
             </div>
 
-            <div class="mt-4">
-                <InputLabel for="password" value="Password" />
+            <div>
+                <InputLabel for="password" value="Contraseña" />
 
                 <TextInput
                     id="password"
                     type="password"
-                    class="mt-1 block w-full"
+                    class="mt-2 block w-full"
                     v-model="form.password"
                     required
                     autocomplete="new-password"
@@ -71,16 +83,16 @@ const submit = () => {
                 <InputError class="mt-2" :message="form.errors.password" />
             </div>
 
-            <div class="mt-4">
+            <div>
                 <InputLabel
                     for="password_confirmation"
-                    value="Confirm Password"
+                    value="Confirmar contraseña"
                 />
 
                 <TextInput
                     id="password_confirmation"
                     type="password"
-                    class="mt-1 block w-full"
+                    class="mt-2 block w-full"
                     v-model="form.password_confirmation"
                     required
                     autocomplete="new-password"
@@ -92,22 +104,23 @@ const submit = () => {
                 />
             </div>
 
-            <div class="mt-4 flex items-center justify-end">
-                <Link
-                    :href="route('login')"
-                    class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                    Already registered?
-                </Link>
-
-                <PrimaryButton
-                    class="ms-4"
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
-                    Register
-                </PrimaryButton>
-            </div>
+            <PrimaryButton
+                class="mt-2 w-full justify-center rounded-xl !bg-[#1b4332] py-3 text-sm shadow-lg shadow-[#1b4332]/15 transition hover:!bg-[#153628] focus:!ring-[#d68c45]"
+                :class="{ 'opacity-25': form.processing }"
+                :disabled="form.processing"
+            >
+                Crear cuenta
+            </PrimaryButton>
         </form>
+
+        <p class="mt-6 text-center text-sm text-gray-600">
+            ¿Ya tienes una cuenta?
+            <Link
+                :href="route('login')"
+                class="font-semibold text-[#1b4332] transition hover:text-[#b26b2b] focus:outline-none focus:ring-2 focus:ring-[#d68c45] focus:ring-offset-2"
+            >
+                Inicia sesión
+            </Link>
+        </p>
     </GuestLayout>
 </template>

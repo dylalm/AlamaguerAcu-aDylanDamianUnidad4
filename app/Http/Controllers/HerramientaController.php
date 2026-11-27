@@ -6,24 +6,9 @@ use App\Models\Herramienta;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use App\Http\Requests\StoreHerramientaRequest;
 
 class HerramientaController extends Controller
 {
-    public function create()
-    {
-        return Inertia::render('Herramientas/Create');
-    }
-
-    public function store(StoreHerramientaRequest $request)
-    {
-        $request->user()->herramientas()->create(
-            $request->validated() + ['disponible' => true]
-        );
-
-        return redirect()->route('herramientas.index');
-    }
-
     /** Catálogo de herramientas con búsqueda, filtros y orden por cercanía. */
     public function index(Request $request): Response
     {
@@ -36,7 +21,7 @@ class HerramientaController extends Controller
         $centro = config('manovecina.centro');
 
         $herramientas = Herramienta::query()
-            ->with('propietario:id,name')
+            ->with(['propietario:id,name', 'prestatario:id,name'])
             ->buscar($filtros['buscar'] ?? null)
             ->when($filtros['categoria'] ?? null, fn ($consulta, $categoria) => $consulta->where('categoria', $categoria))
             ->when($request->boolean('disponibles'), fn ($consulta) => $consulta->where('disponible', true))
@@ -50,6 +35,8 @@ class HerramientaController extends Controller
                 'categoria_etiqueta' => Herramienta::CATEGORIAS[$herramienta->categoria] ?? 'Otros',
                 'disponible' => $herramienta->disponible,
                 'propietario' => $herramienta->propietario->name,
+                'propietario_id' => $herramienta->user_id,
+                'ocupada_por' => $herramienta->prestatario?->name,
                 'barrio' => $herramienta->barrio,
                 'distancia_km' => $herramienta->distanciaKm($centro['latitud'], $centro['longitud']),
             ])

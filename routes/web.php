@@ -3,10 +3,17 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DisponibilidadController;
 use App\Http\Controllers\HerramientaController;
+use App\Http\Controllers\PrestamoController;
 use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+Route::get('/', function () {
+    return Inertia::render('Welcome', [
+        'canLogin' => Route::has('login'),
+        'canRegister' => Route::has('register'),
+    ]);
+})->name('home');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
@@ -22,8 +29,14 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/auth.php';
 
-Route::get('/herramientas', [HerramientaController::class, 'index'])->name('herramientas.index');
+Route::get('/herramientas', [HerramientaController::class, 'index'])
+    ->middleware('auth')
+    ->name('herramientas.index');
 
 Route::patch('/herramientas/{herramienta}/disponibilidad', DisponibilidadController::class)
     ->middleware('auth')
     ->name('herramientas.disponibilidad');
+
+Route::post('/herramientas/{herramienta}/prestamo', PrestamoController::class)
+    ->middleware('auth')
+    ->name('herramientas.prestamo');

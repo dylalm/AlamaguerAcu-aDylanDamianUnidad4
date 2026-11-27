@@ -9,16 +9,18 @@ use Illuminate\Support\Facades\Gate;
 
 class DisponibilidadController extends Controller
 {
+    /** Alterna una herramienta entre «disponible» y «prestada». HerramientaPolicy exige ser el dueño. */
     public function __invoke(Request $request, Herramienta $herramienta): RedirectResponse
     {
-        Gate::authorize('update', $herramienta); // 403 si no es el dueño
+        Gate::authorize('update', $herramienta);
 
-        $datos = $request->validate([
-            'disponible' => ['sometimes', 'boolean'],
+        $disponible = ! $herramienta->disponible;
+
+        // Al volver a estar disponible, ya no la tiene nadie en préstamo
+        $herramienta->update([
+            'disponible' => $disponible,
+            'prestado_a' => $disponible ? null : $herramienta->prestado_a,
         ]);
-
-        $herramienta->disponible = $datos['disponible'] ?? ! $herramienta->disponible;
-        $herramienta->save();
 
         return back();
     }

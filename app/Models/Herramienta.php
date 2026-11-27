@@ -24,13 +24,16 @@ class Herramienta extends Model
     protected $table = 'herramientas';
 
     protected $fillable = [
-        'user_id', 'nombre', 'descripcion', 'categoria',
-        'barrio', 'latitud', 'longitud', 'disponible',
+        'user_id',
+        'nombre',
+        'descripcion',
+        'categoria',
+        'barrio',
+        'latitud',
+        'longitud',
+        'disponible',
+        'prestado_a',
     ];
-    public function propietario()
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
 
     protected function casts(): array
     {
@@ -38,9 +41,20 @@ class Herramienta extends Model
             'latitud' => 'float',
             'longitud' => 'float',
             'disponible' => 'boolean',
+            'prestado_a' => 'integer',
         ];
     }
 
+    public function propietario(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /** Vecino que tiene la herramienta ocupada en este momento (null si nadie la pidió). */
+    public function prestatario(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'prestado_a');
+    }
 
     /** Busca por nombre o descripción sin distinguir mayúsculas. */
     public function scopeBuscar(Builder $query, ?string $texto): Builder
@@ -69,11 +83,16 @@ class Herramienta extends Model
 
         return round($radioTierra * 2 * atan2(sqrt($a), sqrt(1 - $a)), 1);
     }
-    protected $casts = ['disponible' => 'boolean'];
 
-    public function user()
+    /**
+     * Marca la herramienta como ocupada por un vecino.
+     * Es una sola operación en la base de datos, así que si dos vecinos la piden a la vez, solo uno la consigue.
+     */
+    public function prestarA(User $usuario): bool
     {
-        return $this->belongsTo(User::class);
+        return static::query()
+            ->whereKey($this->id)
+            ->where('disponible', true)
+            ->update(['disponible' => false, 'prestado_a' => $usuario->id]) === 1;
     }
-
 }
